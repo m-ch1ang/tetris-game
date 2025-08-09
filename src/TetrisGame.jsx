@@ -144,18 +144,34 @@ export default function TetrisGame() {
   // UPDATED: lock a specific piece (not implicit state)
   const lockPiece = useCallback((piece) => {
     if (!piece) return;
+
+    const locksAboveTop = piece.matrix.some((row, r) =>
+      row.some((v) => v && (piece.y + r) < 0)
+    );
+
     setBoard(prev => {
       const merged = merge(prev, piece);
       const { board: clearedBoard, cleared } = clearCompleted(merged);
+
       if (cleared) {
-        setLines(l => l + cleared);
+        setLines(l => {
+          const newL = l + cleared;
+          setLevel(Math.floor(newL / 10));
+          return newL;
+        });
         setScore(s => s + scoreForClears(cleared, level));
-        setLevel(v => Math.floor((lines + cleared) / 10));
       }
       return clearedBoard;
     });
+
+    if (locksAboveTop) {
+      setRunning(false);
+      setGameOver(true);
+      return;
+    }
+
     spawnPiece();
-  }, [clearCompleted, merge, spawnPiece, level, lines]);
+  }, [clearCompleted, merge, spawnPiece, level]);
 
   // UPDATED: hard drop computes final y and locks that piece
   const hardDrop = useCallback(() => {
