@@ -206,14 +206,14 @@ export default function TetrisGame() {
     if (!active && running && !gameOver) spawnPiece();
   }, [active, running, gameOver, spawnPiece]);
 
-  // Detect game over when spawning intersects
-  useEffect(() => {
-    if (!active) return;
-    if (collision(active.matrix, active.x, active.y)) {
-      setRunning(false);
-      setGameOver(true);
-    }
-  }, [active, collision]);
+  // // Detect game over when spawning intersects
+  // useEffect(() => {
+  //   if (!active) return;
+  //   if (collision(active.matrix, active.x, active.y)) {
+  //     setRunning(false);
+  //     setGameOver(true);
+  //   }
+  // }, [active, collision]);
 
   const reset = () => {
     setBoard(createEmptyBoard());
