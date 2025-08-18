@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import korobeinikiAudio from "./assets/Korobeiniki.mp3";
 
 // === Tetris constants ===
 const COLS = 10;
@@ -82,9 +83,11 @@ export default function TetrisGame() {
   const [lines, setLines] = useState(0);
   const [level, setLevel] = useState(0);
   const [score, setScore] = useState(0);
+  const [musicEnabled, setMusicEnabled] = useState(true);
   const bagRef = useRef(bagGenerator());
   const loopRef = useRef(null);
   const containerRef = useRef(null);
+  const audioRef = useRef(null);
 
   const speedMs = Math.max(100, 800 - level * 80);
 
@@ -226,6 +229,12 @@ export default function TetrisGame() {
     setLines(0);
     setLevel(0);
     setScore(0);
+    
+    // Restart music when game resets
+    if (audioRef.current && musicEnabled) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(e => console.log("Audio play failed:", e));
+    }
   };
 
   const move = (dx) => {
@@ -279,11 +288,43 @@ export default function TetrisGame() {
     });
   };
 
+  const toggleMusic = () => {
+    setMusicEnabled(prev => {
+      const newState = !prev;
+      if (audioRef.current) {
+        if (newState) {
+          audioRef.current.play().catch(e => console.log("Audio play failed:", e));
+        } else {
+          audioRef.current.pause();
+        }
+      }
+      return newState;
+    });
+  };
+
+  // Music control effect
+  useEffect(() => {
+    if (audioRef.current) {
+      if (musicEnabled && running && !gameOver) {
+        audioRef.current.play().catch(e => console.log("Audio play failed:", e));
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [musicEnabled, running, gameOver]);
+
+  // Initialize audio on component mount
+  useEffect(() => {
+    if (audioRef.current && musicEnabled) {
+      audioRef.current.play().catch(e => console.log("Audio play failed:", e));
+    }
+  }, []);
+
   // Keyboard handling
   useEffect(() => {
     const onKey = (e) => {
       if (gameOver) return;
-      if (["ArrowLeft","ArrowRight","ArrowDown","Space","ArrowUp","KeyZ","KeyX","KeyP","KeyR","KeyC"].includes(e.code)) e.preventDefault();
+      if (["ArrowLeft","ArrowRight","ArrowDown","Space","ArrowUp","KeyZ","KeyX","KeyP","KeyR","KeyC","KeyM"].includes(e.code)) e.preventDefault();
       switch (e.code) {
         case "ArrowLeft": move(-1); break;
         case "ArrowRight": move(1); break;
@@ -295,12 +336,13 @@ export default function TetrisGame() {
         case "KeyP": setRunning(r => !r); break;
         case "KeyR": reset(); break;
         case "KeyC": hold(); break;
+        case "KeyM": toggleMusic(); break;
         default: break;
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [gameOver, hardDrop]);
+  }, [gameOver, hardDrop, toggleMusic]);
 
   // Draw a merged view for render (board + active)
   const renderGrid = useMemo(() => {
@@ -329,6 +371,15 @@ export default function TetrisGame() {
 
   return (
     <div ref={containerRef} className="w-full h-full min-h-[24rem] flex items-center justify-center p-4">
+      {/* Hidden audio element */}
+      <audio 
+        ref={audioRef}
+        src={korobeinikiAudio}
+        loop
+        volume={0.6}
+        preload="auto"
+      />
+      
       <div className="grid md:grid-cols-[minmax(0,1fr)_auto] gap-4 w-full max-w-5xl">
         {/* Left: Game board */}
         <div className="flex flex-col gap-3">
@@ -338,6 +389,13 @@ export default function TetrisGame() {
               <button onClick={() => setRunning(true)} className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white shadow">Start</button>
               <button onClick={() => setRunning(r => !r)} className="px-3 py-1.5 rounded-xl bg-indigo-600 text-white shadow">{running ? "Pause" : "Resume"}</button>
               <button onClick={reset} className="px-3 py-1.5 rounded-xl bg-zinc-700 text-white shadow">Reset</button>
+              <button 
+                onClick={toggleMusic} 
+                className="px-3 py-1.5 rounded-xl bg-purple-600 text-white shadow flex items-center gap-1"
+                title={`Music ${musicEnabled ? 'On' : 'Off'} (Press M)`}
+              >
+                {musicEnabled ? '🔊' : '🔇'}
+              </button>
             </div>
           </div>
 
@@ -376,6 +434,7 @@ export default function TetrisGame() {
               <div><span className="font-semibold">↑ / Z / X</span> rotate</div>
               <div><span className="font-semibold">C</span> hold</div>
               <div><span className="font-semibold">P</span> pause</div>
+              <div><span className="font-semibold">M</span> music toggle</div>
             </div>
           </div>
         </div>
