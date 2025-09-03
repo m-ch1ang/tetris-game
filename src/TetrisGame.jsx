@@ -323,8 +323,14 @@ export default function TetrisGame() {
   // Keyboard handling
   useEffect(() => {
     const onKey = (e) => {
+      // Always allow reset with R
+      if (["KeyR"].includes(e.code)) {
+        e.preventDefault();
+        reset();
+        return;
+      }
       if (gameOver) return;
-      if (["ArrowLeft","ArrowRight","ArrowDown","Space","ArrowUp","KeyZ","KeyX","KeyP","KeyR","KeyC","KeyM"].includes(e.code)) e.preventDefault();
+      if (["ArrowLeft","ArrowRight","ArrowDown","Space","ArrowUp","KeyZ","KeyX","KeyP","KeyC","KeyM"].includes(e.code)) e.preventDefault();
       switch (e.code) {
         case "ArrowLeft": move(-1); break;
         case "ArrowRight": move(1); break;
@@ -334,7 +340,6 @@ export default function TetrisGame() {
         case "KeyX": rotate(); break;
         case "Space": hardDrop(); break;
         case "KeyP": setRunning(r => !r); break;
-        case "KeyR": reset(); break;
         case "KeyC": hold(); break;
         case "KeyM": toggleMusic(); break;
         default: break;
